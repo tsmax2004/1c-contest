@@ -5,10 +5,11 @@ import diff_match_patch as dmp_module
 
 
 class DirComparator:
-    def __init__(self, dir_path1: str, dir_path2: str, match_border: int):
+    def __init__(self, dir_path1: str, dir_path2: str, match_border: int, levenshtein: bool = False):
         self.dir_path1 = dir_path1
         self.dir_path2 = dir_path2
         self.match_border = match_border
+        self.levenshtein = levenshtein
 
         self.identical_files: list[tuple[str, str]] = []
         self.similar_files: list[tuple[str, str, float]] = []
@@ -25,7 +26,11 @@ class DirComparator:
     def compare_contents(self, content1: str, content2: str) -> float:
         dmp = dmp_module.diff_match_patch()
         diff = dmp.diff_main(content1, content2)
-        return self.compute_match_percent(diff, max(len(content1), len(content2)))
+        max_len = max(len(content1), len(content2))
+
+        if self.levenshtein:
+            return (max_len - dmp.diff_levenshtein(diff)) / max_len * 100
+        return self.compute_match_percent(diff, max_len)
 
     def print_results(self):
         if len(self.identical_files) != 0:
@@ -97,7 +102,26 @@ class DirComparator:
 
 
 def main(argv):
-    if len(argv) == 0:
+    levenshtein = False
+    try:
+        opts, args = getopt.getopt(argv, "hl")
+    except getopt.GetoptError as e:
+        print(f'Неизвестный параметр: {e.opt}')
+        print('Использование: main.py [-l] dir1 dir2 match')
+        print('Попробуйте -h для подробной информации')
+        return
+
+    for opt, arg in opts:
+        if opt == '-h':
+            print('Использование: main.py [-l] dir1 dir2 match')
+            print('-l         - использовать расстояние Левенштейна')
+            print('dir1, dir2 - пути до директорий')
+            print('match      - требуемый процент сходства (целое число от 0 до 100)')
+            return
+        elif opt == '-l':
+            levenshtein = True
+
+    if len(args) == 0:
         dir_path1 = input("Введите абсолютный путь первой директории: ")
         dir_path2 = input("Введите абсолютный путь второй директории: ")
 
@@ -108,15 +132,15 @@ def main(argv):
             return
         print()
 
-    elif len(argv) == 3:
-        dir_path1, dir_path2, match_border = argv
+    elif len(args) == 3:
+        dir_path1, dir_path2, match_border = args
         try:
             match_border = int(match_border)
         except TypeError:
             print("Неверный ввод: процент сходства должен быть целым числом от 0 до 100")
             return
     else:
-        print(f'Ожидалось 3 аргумента (путь1, путь2, процент сходства), получено {len(argv)}')
+        print(f'Ожидалось 3 аргумента (путь1, путь2, процент сходства), получено {len(args)}')
         return
 
     if not isdir(dir_path1):
@@ -135,7 +159,7 @@ def main(argv):
         print("Неверный ввод: процент сходства должен быть целым числом от 0 до 100")
         return
 
-    cmp = DirComparator(dir_path1, dir_path2, match_border)
+    cmp = DirComparator(dir_path1, dir_path2, match_border, levenshtein=levenshtein)
     cmp.compare_dirs()
 
 
