@@ -1,6 +1,9 @@
-import sys, getopt
+import filecmp
+import getopt
+import sys
 from os import listdir
 from os.path import isfile, isdir, join
+
 import diff_match_patch as dmp_module
 
 
@@ -76,11 +79,17 @@ class DirComparator:
             with open(file_path1, 'r') as f1:
                 content1 = f1.read()
                 for file_path2 in files2:
+                    if filecmp.cmp(file_path1, file_path2, shallow=False):  # compare only stat info
+                        self.identical_files.append((file_path1, file_path2))
+                        self.unique_files1.discard(file_path1)
+                        self.unique_files2.discard(file_path2)
+                        continue
+
                     with open(file_path2, 'r') as f2:
                         content2 = f2.read()
 
                         if len(content1) == 0 and len(content2) == 0:
-                            match = 1
+                            match = 100
                         elif len(content1) == 0 or len(content2) == 0:
                             continue
                         elif len(content1) / len(content2) * 100 < self.match_border \
