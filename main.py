@@ -45,7 +45,7 @@ class DirComparator:
             print('\n'.join(self.unique_files1))
             print()
 
-        if len(self.unique_files1) != 0:
+        if len(self.unique_files2) != 0:
             print("Уникальные файлы во второй директории:")
             print('\n'.join(self.unique_files2))
             print()
