@@ -1,0 +1,24 @@
+version: '2'
+
+services:
+  pdris:
+    container_name: pdris
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_HTTP_ADDR=:8080
+      - SERVER_ENV=dev
+    image: bongerka/pdris
+    restart: unless-stopped
+
+
+  pg:
+    container_name: pg_pdris
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+    image: postgres
+    restart: always
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
